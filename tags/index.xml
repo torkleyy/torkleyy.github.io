@@ -7,71 +7,71 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
     <copyright>Copyright © 2017 Thomas Schaller</copyright>
-    <lastBuildDate>Wed, 02 Apr 2014 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 18 Apr 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://torkleyy.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Development</title>
-      <link>https://torkleyy.github.io/tags/development/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Amethyst</title>
+      <link>https://torkleyy.github.io/tags/amethyst/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/development/</guid>
+      <guid>https://torkleyy.github.io/tags/amethyst/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Go</title>
-      <link>https://torkleyy.github.io/tags/go/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Assets</title>
+      <link>https://torkleyy.github.io/tags/assets/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/go/</guid>
+      <guid>https://torkleyy.github.io/tags/assets/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Golang</title>
-      <link>https://torkleyy.github.io/tags/golang/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Engine</title>
+      <link>https://torkleyy.github.io/tags/engine/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/golang/</guid>
+      <guid>https://torkleyy.github.io/tags/engine/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Hugo</title>
-      <link>https://torkleyy.github.io/tags/hugo/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Games</title>
+      <link>https://torkleyy.github.io/tags/games/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/hugo/</guid>
+      <guid>https://torkleyy.github.io/tags/games/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Projects</title>
-      <link>https://torkleyy.github.io/tags/projects/</link>
-      <pubDate>Sun, 01 Jan 2017 00:00:00 +0000</pubDate>
+      <title>Programming</title>
+      <link>https://torkleyy.github.io/tags/programming/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/projects/</guid>
+      <guid>https://torkleyy.github.io/tags/programming/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Templates</title>
-      <link>https://torkleyy.github.io/tags/templates/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Rust</title>
+      <link>https://torkleyy.github.io/tags/rust/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/templates/</guid>
+      <guid>https://torkleyy.github.io/tags/rust/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Themes</title>
-      <link>https://torkleyy.github.io/tags/themes/</link>
-      <pubDate>Wed, 02 Apr 2014 00:00:00 +0000</pubDate>
+      <title>Rustlang</title>
+      <link>https://torkleyy.github.io/tags/rustlang/</link>
+      <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://torkleyy.github.io/tags/themes/</guid>
+      <guid>https://torkleyy.github.io/tags/rustlang/</guid>
       <description></description>
     </item>
     

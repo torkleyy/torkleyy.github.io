@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="torkleyy&#39;s blog">
+
+
+<meta property="twitter:title" content="Designing asset management in Amethyst">
+
+    <meta property="twitter:card" content="summary">
+
+<meta property="twitter:description" content="">
+
+<title>
+
+
+     torkleyy&#39;s blog - Designing asset management in Amethyst 
+
+</title>
+<link rel="canonical" href="https://torkleyy.github.io/blog/amethyst-assets/">
+
+
+<link rel="stylesheet" href="https://torkleyy.github.io/css/main.v1.0.0.css">
+
+
+  <link rel="stylesheet" href="https://torkleyy.github.io/css/highlight.min.css">
+
+
+
+  <link rel="stylesheet" href="https://torkleyy.github.io/css/progressively.min.css">
+
+
+
+
+
+<link rel="shortcut icon"
+
+    href="https://torkleyy.github.io/img/logo.png"
+
+>
+
+
+
+
+</head>
+
+
+<body>
+
+
+<section class="header">
+
+    <div class="container">
+        <a href="https://torkleyy.github.io/"><img class="logo" src="https://torkleyy.github.io/img/logo.png" alt="logo" /></a>
+        <div class="content">
+            <a href="https://torkleyy.github.io/"><div class="name"><h1>torkleyy&#39;s blog</h1></div></a>
+            <nav>
+                <ul>
+                    
+                        <a href="https://torkleyy.github.io/blog/"><li>Blog</li></a>
+                    
+                    
+                        
+                    
+                        
+                            
+                        
+                    
+                    
+                        
+                    
+                        
+                    
+                </ul>
+            </nav>
+        </div>
+    </div>
+</section>
+
+
+<section class="main post non-narrow zero-top-spacing">
+    <div class="container">
+        <div class="content">
+            <div class="front-matter">
+                <div class="title-container">
+                    <div class="page-heading">
+
+    Designing asset management in Amethyst
+
+</div>
+
+                </div>
+                <div class="meta">
+                    <div class="date" title="Tue Apr 18 2017 00:00:00 UTC">Apr 18, 2017</div>
+                    
+                        
+                    
+                    <div class="reading-time"><div class="middot"></div>6 minute read</div>
+                    <div class="tags">
+                        <ul>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/rust">rust</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/rustlang">rustlang</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/programming">programming</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/amethyst">amethyst</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/assets">assets</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/games">games</a> </li>
+                          
+                            <div class="middot"></div>
+                            <li><a href="https://torkleyy.github.io/tags/engine">engine</a> </li>
+                          
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="markdown">
+                
+    
+    
+
+<p>About two months ago, I decided to get started with Amethyst.
+However, I didn&rsquo;t quite like the asset management, especially
+because it blocks the main thread. In this blog post, I
+describe how I designed the asset management for Amethyst.</p>
+
+<h2 id="first-experiments">First experiments</h2>
+
+<p>At first, I thought let&rsquo;s try out these very promising
+<a href="https://github.com/alexcrichton/futures-rs">futures</a>.
+However, it turned out they weren&rsquo;t as ergonomic as they
+seemed to be.</p>
+
+<p>For one, you have to either <code>wait()</code> for them or <code>poll()</code>
+them. The first one obviously doesn&rsquo;t make sense. The second
+one is not really nice, because you have to check:
+&ldquo;Do I have my monkey, the grass texture, my M4A1 gun model and my floor
+texture loaded up already?&rdquo; And doing this doesn&rsquo;t really
+work out in a nice way.</p>
+
+<p>Another option I considered was just doing a callback which
+basically notifies the caller that the asset was loaded.
+However, this has similar problems and you cannot switch
+the state, which would be a very typical action (if you are
+seeing the loading screen at the moment and all the assets
+are finished).</p>
+
+<p>Another thing I realized was that you almost never want
+to just know that one asset is finished now, but
+a whole set of them. This was one of the first design decision.</p>
+
+<h2 id="the-assetset">The AssetSet</h2>
+
+<p>An <code>AssetSet</code> groups multiple assets which logically
+belong together (because they are all needed for the
+same level).</p>
+
+<p>It&rsquo;s just a trait which returns a builder like this:</p>
+
+<pre><code class="language-rust">trait AssetSet {
+    type Builder: AssetSetBuilder&lt;Self&gt;;
+
+    fn builder() -&gt; Builder;
+}
+
+trait AssetSetBuilder&lt;T: Sized&gt; {
+    /// Submit all the assets to the asset loader
+    fn submit(&amp;self, loader: &amp;mut AssetLoader);
+    /// Returns the next asset which is required
+    /// for building this asset set.
+    fn next_asset(&amp;self) -&gt; Option&lt;(TypeId, &amp;str)&gt;;
+    /// Sets this asset.
+    fn set(&amp;mut self, id: (TypeId, &amp;str), asset: Box&lt;Any&gt;);
+    fn name(&amp;self) -&gt; &amp;str;
+    fn build() -&gt; T;
+}
+</code></pre>
+
+<p>As you can guess, you don&rsquo;t want to implement
+this yourself for every group of assets.
+So we basically want some way to implement
+this trait, which also allows us to pass
+a format or an <code>AssetStore</code>.</p>
+
+<h2 id="what-about-derive">What about #[derive]?</h2>
+
+<p>I think derive matches the above requirements very good.</p>
+
+<p>Declaring an asset set is then as easy as:</p>
+
+<pre><code class="language-rust">#[derive(AssetSet)]
+struct MyGroupOfAssets {
+    #[format(Obj)]
+    monkey: Mesh, // will load a mesh from resources/meshes/monkey.obj
+    #[from(path = &quot;subfolder/floor&quot;)]
+    floor: Material, // loads a material from resources/materials/floor.*
+                     // (figures out which format)
+    #[from(store = &quot;network_store&quot;)]
+    map: Mesh, // will load the map from some network stream
+
+    // ignored because it does not implement
+    // `Asset`.
+    network_store: NetworkStore,
+}
+</code></pre>
+
+<p>This derive will then generate an implementation of <code>AssetSet</code>,
+a builder struct and an <code>AssetSetBuilder</code> implementation.</p>
+
+<h2 id="assets">Assets</h2>
+
+<p>Now let&rsquo;s look at what an <code>Asset</code> is:</p>
+
+<pre><code class="language-rust">trait Asset {
+    type Data;
+    type Error;
+
+    fn from_data(data: Self::Data, ...);
+}
+</code></pre>
+
+<p>It only provides a way to convert plain data
+to the actual asset. This allows us to have
+as many formats as we like, which just have to
+generate some <code>Asset::Data</code>. Additionally,
+this way we can later reuse this <code>Data</code>
+to convert one format to another.</p>
+
+<h2 id="the-assetloader">The AssetLoader</h2>
+
+<p>Okay, but I still didn&rsquo;t answer how the user should handle this.
+Basically, the user just tell the <code>AssetLoader</code> to load
+such a set by calling</p>
+
+<pre><code class="language-rust">loader.load_set::&lt;MyGroupOfAssets&gt;();
+</code></pre>
+
+<p>As soon as the asset manager finished one set, it will notify
+the user with an event. This might look something like this:</p>
+
+<pre><code class="language-rust">fn handle_event(engine: Engine, event: Event) -&gt; Trans {
+    match event {
+        Event::AssetSetLoaded(set) =&gt; {
+            if let Ok(my_group) = set.downcast::&lt;MyGroupOfAssets&gt;() {
+                engine.planner.mut_world().add_resource(my_group)
+                
+                Trans::Switch(Box::new(Level1State))
+            }
+        }
+        _ =&gt; {}
+    }
+}
+</code></pre>
+
+<p>And all this comes with very much flexibility, because
+you can do whatever you want when the event comes in.
+Additionally, you can just implement the <code>AssetSetBuilder</code>
+yourself or just submit a single asset. But after creating
+all these assets, how are they freed again?</p>
+
+<h2 id="asset-freeing">Asset Freeing</h2>
+
+<p>This is actually quite tricky. One proposal was to associate
+asset lifetime with a <code>State</code> meaning as long as the state
+is in the stack, the assets stay alive, a pop will destroy
+them all. What I liked most about this was that it nicely
+integrates with these <code>State</code>s, making them more meaningful.</p>
+
+<p>However, if you come to Rust, I guess you want maximum performance
+and so do I. Making such a restriction like tying states and
+assets togegether and forcing a deallocation on a pop will
+most likely be worked around by some users, for example
+by doing asset management themselves.</p>
+
+<p>Let&rsquo;s look at what our assets actually are (meaning <code>Texture</code>s,
+<code>Mesh</code>es and so on).</p>
+
+<p>By looking at the <code>Texture</code> component in Amethyst and walking
+to the definition of the contained type, I could get to
+<code>RawShaderResourceView</code>:</p>
+
+<pre><code class="language-rust">#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct RawShaderResourceView&lt;R: Resources&gt;(Arc&lt;R::ShaderResourceView&gt;, ViewSource&lt;R&gt;);
+</code></pre>
+
+<p>This essentially means that our assets are internally already managed,
+so we can essentially just do a <code>.clone()</code>.
+And that&rsquo;s actually fine and I think we can do it that way.</p>
+
+<p>The real problems are that you</p>
+
+<p>1) Do have your assets in an <code>AssetSet</code>
+2) Don&rsquo;t want to load you assets twice</p>
+
+<p>So we have to store them in the <code>AssetLoader</code>.
+To do that, we can simply use a <code>FnvHashMap</code>.</p>
+
+<p>But now, because we have another clone of our asset
+around, the buffer is kept in the gpu memory,
+no matter what.</p>
+
+<p>To explain my proposal here, consider the following
+two <code>AssetSet</code>s:</p>
+
+<pre><code class="language-rust">#[derive(AssetSet)]
+struct Level1Assets {
+    floor: Material,
+    monkey: Mesh,
+}
+
+#[derive(AssetSet)]
+struct Level2Assets {
+    floor: Material,
+    building: Mesh,
+}
+</code></pre>
+
+<p>The key point here is that they both need
+the <code>floor</code> material, even though they don&rsquo;t
+logically belong together.</p>
+
+<p>This means, when we have a state switch like this</p>
+
+<pre><code class="language-rust">fn handle_event(...) -&gt; Trans {
+    match event {
+        ...
+        Event::User(&quot;DOOR_ENTERED&quot;) =&gt; Trans::Switch(Box::new(Level2))
+    }
+}
+</code></pre>
+
+<p>we don&rsquo;t want the <code>floor</code> freed, but only the <code>monkey</code>.</p>
+
+<p>To do that, we just submit our set of assets as usual,
+and after we did that, we want to ask the asset loader
+to free all unused assets, meaning the ones which have
+only one reference (in the <code>AssetLoader</code>)<sup>[<a href="one-reference">1</a>]</sup>.</p>
+
+<h2 id="asset-config-files">Asset config files</h2>
+
+<p>A possible extension would be to allow defining
+these asset sets in config files, but that can
+still be done later and doesn&rsquo;t have anything to do
+with the core part of the asset loading.</p>
+
+<h2 id="the-problem-with-opengl">The problem with OpenGL</h2>
+
+<p>Because OpenGL is single-threaded, the creation
+of meshes will happen through a channel.</p>
+
+<hr />
+
+<p><strong>Note:</strong> All these points described above are of course
+open for discussion and I would also highly appreciate
+some feedback.</p>
+
+<hr />
+
+<p><a name="one-reference">1</a>: Actually, getting the number of references
+is a problem currently, because <code>gfx</code> does not
+have such a feature yet.</p>
+
+
+                <br>
+            </div>
+            
+                <div class="navigation">
+                    
+                    <div style="width: 100%;"></div>
+                    
+                </div>
+            
+            <br>
+            <div class="disqus">
+                
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="footer">
+    <div class="container">
+        <div class="copyright">
+
+        
+            <a href="https://torkleyy.github.io/license">Copyright © 2017 Thomas Schaller</a>
+        
+
+        </div>
+        <div class="icons">
+
+        
+            <a href="https://github.com/torkleyy" target="_blank">
+                <img class="icon" src="https://torkleyy.github.io/img/github.svg" alt="github" />
+            </a>
+        
+
+        
+
+        
+
+        
+
+        
+            <a href="https://torkleyy.github.io/index.xml">
+                <img class="icon" src="https://torkleyy.github.io/img/rss.svg" alt="rss" />
+            </a>
+        
+
+        </div>
+    </div>
+</section>
+
+
+  <script src="https://torkleyy.github.io/js/highlight.min.js" defer></script>
+  
+
+
+
+  <script src="https://torkleyy.github.io/js/progressively.min.js" defer></script>
+
+
+
+
+<script>
+  window.onload = function() {
+    
+      hljs.initHighlighting();
+    
+    
+      progressively.init({delay: 30, throttle: 50});
+    
+  };
+</script>
+
+<link href="https://fonts.googleapis.com/css?family=Raleway:400,600,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:300,300i,700,700i" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700" rel="stylesheet">
+
+
+
+</body>
+</html>
+
