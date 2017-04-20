@@ -18,9 +18,8 @@
       <pubDate>Tue, 18 Apr 2017 00:00:00 +0000</pubDate>
       
       <guid>https://torkleyy.github.io/blog/amethyst-assets/</guid>
-      <description>About two months ago, I decided to get started with Amethyst. However, I didn&amp;rsquo;t quite like the asset management, especially because it blocks the main thread. In this blog post, I describe how I designed the asset management for Amethyst.
-First experiments At first, I thought let&amp;rsquo;s try out these very promising futures. However, it turned out they weren&amp;rsquo;t as ergonomic as they seemed to be.
-For one, you have to either wait() for them or poll() them.</description>
+      <description>About two months ago, I decided to get started with Amethyst, a data-driven game engine written in Rust. However, I didn&amp;rsquo;t quite like the asset management, especially because it blocks the main thread. In this blog post, I describe how I designed the asset management for Amethyst.
+First experiments At first, I thought let&amp;rsquo;s try out these very promising futures. However, it turned out they weren&amp;rsquo;t as ergonomic as they seemed to be.</description>
     </item>
     
     <item>

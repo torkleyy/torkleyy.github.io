@@ -135,7 +135,8 @@
     
     
 
-<p>About two months ago, I decided to get started with Amethyst.
+<p>About two months ago, I decided to get started with <a href="https://www.amethyst.rs/">Amethyst</a>,
+a data-driven game engine written in Rust.
 However, I didn&rsquo;t quite like the asset management, especially
 because it blocks the main thread. In this blog post, I
 describe how I designed the asset management for Amethyst.</p>
@@ -168,7 +169,7 @@ a whole set of them. This was one of the first design decision.</p>
 <h2 id="the-assetset">The AssetSet</h2>
 
 <p>An <code>AssetSet</code> groups multiple assets which logically
-belong together (because they are all needed for the
+belong together (for example because they are all needed for the
 same level).</p>
 
 <p>It&rsquo;s just a trait which returns a builder like this:</p>
@@ -225,7 +226,7 @@ a builder struct and an <code>AssetSetBuilder</code> implementation.</p>
 
 <h2 id="assets">Assets</h2>
 
-<p>Now let&rsquo;s look at what an <code>Asset</code> is:</p>
+<p>Now let&rsquo;s look at what an <code>Asset</code> actually is:</p>
 
 <pre><code class="language-rust">trait Asset {
     type Data;
@@ -235,8 +236,8 @@ a builder struct and an <code>AssetSetBuilder</code> implementation.</p>
 }
 </code></pre>
 
-<p>It only provides a way to convert plain data
-to the actual asset. This allows us to have
+<p>It only provides a function to convert plain data
+into an actual asset. This allows us to have
 as many formats as we like, which just have to
 generate some <code>Asset::Data</code>. Additionally,
 this way we can later reuse this <code>Data</code>
@@ -245,7 +246,7 @@ to convert one format to another.</p>
 <h2 id="the-assetloader">The AssetLoader</h2>
 
 <p>Okay, but I still didn&rsquo;t answer how the user should handle this.
-Basically, the user just tell the <code>AssetLoader</code> to load
+Basically, the user just tells the <code>AssetLoader</code> to load
 such a set by calling</p>
 
 <pre><code class="language-rust">loader.load_set::&lt;MyGroupOfAssets&gt;();
@@ -267,6 +268,29 @@ the user with an event. This might look something like this:</p>
     }
 }
 </code></pre>
+
+<h3 id="how-it-works-internally">How it works internally</h3>
+
+<p>The <code>AssetLoader</code> loads everything<sup><a href="#everything">1</a></sup>
+asynchronously using a a shared thread pool (which is also
+used for the ECS and for rendering).</p>
+
+<p>As soon as an <code>Asset</code> is loaded, it will check if one of
+the asset sets are completed now. If that&rsquo;s the case, an
+<code>Event</code> will be emitted.</p>
+
+<h3 id="even-more-flexibility">Even more flexibility</h3>
+
+<p>If you have a very special case and you only want
+to load a single asset, you can also do that.
+Or if you want to load multiple assets, but
+you want some very custom handling, you just
+provide a callback function which can react on
+a finished function (that&rsquo;s actually how the
+default case is implemented: a callback will emit
+an <code>Event</code> if an <code>AssetSet</code> is finished).</p>
+
+<hr />
 
 <p>And all this comes with very much flexibility, because
 you can do whatever you want when the event comes in.
@@ -350,7 +374,7 @@ logically belong together.</p>
 <p>To do that, we just submit our set of assets as usual,
 and after we did that, we want to ask the asset loader
 to free all unused assets, meaning the ones which have
-only one reference (in the <code>AssetLoader</code>)<sup><a href="#one-reference">1</a></sup>.</p>
+only one reference (in the <code>AssetLoader</code>)<sup><a href="#one-reference">2</a></sup>.</p>
 
 <h2 id="asset-config-files">Asset config files</h2>
 
@@ -359,20 +383,26 @@ these asset sets in config files, but that can
 still be done later and doesn&rsquo;t have anything to do
 with the core part of the asset loading.</p>
 
-<h2 id="the-problem-with-opengl">The problem with OpenGL</h2>
+<h2 id="conclusion">Conclusion</h2>
 
-<p>Because OpenGL is single-threaded, the creation
-of meshes will happen through a channel.</p>
+<p>I really like the new asset management and I think it&rsquo;s
+highly flexible and will allow us to do all kinds
+of convenient asset loading.</p>
+
+<p>Feedback is highly appreciated!
+Please contact me <a href="https://gitter.im/torkleyy">on Gitter</a>.</p>
+
+<p>Next week I&rsquo;ll actually implement this and eventually
+work out how you would handle very big worlds (where
+you need to load and unload assets on the fly).</p>
 
 <hr />
 
-<p><strong>Note:</strong> All these points described above are of course
-open for discussion and I would also highly appreciate
-some feedback.</p>
+<p><a name="everything">1</a>: Everything except OpenGL stuff, because
+OpenGL is single-threaded, so buffer creation happens through a
+channel.</p>
 
-<hr />
-
-<p><a name="one-reference">1</a>: Actually, getting the number of references
+<p><a name="one-reference">2</a>: Actually, getting the number of references
 is a problem currently, because <code>gfx</code> does not
 have such a feature yet.</p>
 
